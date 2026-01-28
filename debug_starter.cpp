@@ -16,13 +16,13 @@ std::vector<int> readInts(const std::string& filename) {
 double mean_BUG(const std::vector<int>& v) {
     long long sum = 0;
     for (int x : v) sum += x;
-    return (v.empty()) ? 0.0 : (sum / v.size());
+    return (v.empty()) ? 0.0 : (static_cast<double>(sum) / v.size()); // to avoid int divison, sum/v.size() need double casting.
 }
 
 // BUG #2: out-of-bounds (ASan should catch)
 int countAbove_BUG(const std::vector<int>& v, int threshold) {
     int cnt = 0;
-    for (size_t i = 0; i <= v.size(); i++) {
+    for (size_t i = 0; i < v.size(); i++) { // index i should always be less than v.size()
         if (v[i] > threshold) cnt++;
     }
     return cnt;
@@ -32,7 +32,7 @@ int countAbove_BUG(const std::vector<int>& v, int threshold) {
 int* maxPtr_BUG(const std::vector<int>& v) {
     if (v.empty()) return nullptr;
     int* p = new int(*std::max_element(v.begin(), v.end()));
-    delete p;
+	// to avoid UB, pointer p should not be deleted prior to final usage
     return p;
 }
 
@@ -49,6 +49,7 @@ int main(int argc, char** argv) {
 
     int* pMax = maxPtr_BUG(nums);
     if (pMax) std::cout << "Max=" << *pMax << "\n";
+	delete pMax; // pointer should only be deleted after its use, not before
 
     std::cout << "Count(>" << threshold << ")="
               << countAbove_BUG(nums, threshold) << "\n";
