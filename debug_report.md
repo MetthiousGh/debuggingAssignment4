@@ -80,12 +80,38 @@ g++ -std=c++17 -O0 -g -Wall -Wextra -Wpedantic -fsanitize=address debug_starter.
 	//34	int* p = new int(*std::max_element(v.begin(), v.end())); error with int pointer in function maxPtr_BUG() in debug_starter.cpp
 	SUMMARY: AddressSanitizer: heap-use-after-free /workspaces/assignment4-debugging-MetthiousGh/debug_starter.cpp:51 in main
 	Shadow bytes around the buggy address:
-	0x501ffffffd80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-	0x501ffffffe00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-	0x501ffffffe80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-	0x501fffffff00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 	0x501fffffff80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 	=>0x502000000000: fa fa fd fa fa fa fd fa fa fa fd fd fa fa[fd]fa
 	//int, *pMax, left dangling in shadow memory leading to undenfined behavior.
+```
+## 4. Fixes to debug_starter.cpp
 
+```fixes
+	19:	- return (v.empty()) ? 0.0 : (sum / v.size());
+	19:	+ return (v.empty()) ? 0.0 : (static_cast<double>(sum) / v.size());
+	motive: "sum static_cast into double to enable float division"
+
+	25: - for (size_t i = 0; i <= v.size(); i++) {
+	25: + for (size_t i = 0; i < v.size(); i++) {
+	motive: "i limited to less than v.size() to avoid OBOE"
+
+	35: - delete p;
+	51: + delete pMax;
+	motive: "pointer deletion postponed to avoid UB"
+```
+
+## 5. Resolved outputs from standard and trigger inputs
+
+```
+	[Output of input_small.txt]
+N=5
+Mean=30
+Max=50
+Count(>50)=0
+
+	[Output of input_trigger.txt]
+N=8
+Mean=4.5
+Max=8
+Count(>50)=0
 ```
